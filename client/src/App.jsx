@@ -874,7 +874,7 @@ export default function App() {
               <div className="call-card">
                 <div className="call-card-header">
                   <h3>You</h3>
-                  <span>Local - muted</span>
+                
                 </div>
                 <video
                   ref={attachLocalVideo}
