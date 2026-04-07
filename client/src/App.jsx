@@ -20,9 +20,20 @@ import {
   unpackPacket,
 } from "./lib/steganography.js";
 
-const SIGNAL_URL =
-  import.meta.env.VITE_SIGNAL_URL
-  || (typeof window !== "undefined" ? window.location.origin : "http://localhost:3001");
+function resolveSignalUrl() {
+  const configured = import.meta.env.VITE_SIGNAL_URL?.trim();
+  if (configured) return configured;
+
+  if (typeof window !== "undefined") {
+    const isLocalhost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+    if (isLocalhost) return "http://localhost:3001";
+    return window.location.origin;
+  }
+
+  return "http://localhost:3001";
+}
+
+const SIGNAL_URL = resolveSignalUrl();
 const VIDEO_CONSTRAINTS = {
   audio: true,
   video: {
@@ -45,12 +56,24 @@ function formatBytes(bytes) {
   return `${value.toFixed(value >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
 }
 
+
+function toWebSocketUrl(url) {
+  const base = typeof window !== "undefined" ? window.location.href : "http://localhost:3001";
+  const resolved = new URL(url, base);
+  if (resolved.protocol === "https:") {
+    resolved.protocol = "wss:";
+  } else if (resolved.protocol === "http:") {
+    resolved.protocol = "ws:";
+  }
+  return resolved.toString();
+}
+
 function createSignaling(url) {
   let socket;
   const listeners = new Map();
   return {
     connect() {
-      socket = new WebSocket(url.replace(/^http/, "ws"));
+      socket = new WebSocket(toWebSocketUrl(url));
       socket.addEventListener("message", (event) => {
         const message = JSON.parse(event.data);
         listeners.get(message.type)?.(message.payload);
@@ -71,6 +94,7 @@ function createSignaling(url) {
 export default function App() {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
+  const remoteAudioRef = useRef(null);
   const peerRef = useRef(null);
   const localStreamRef = useRef(null);
   const remoteStreamRef = useRef(null);
@@ -114,6 +138,13 @@ export default function App() {
   });
 
   const signaling = useMemo(() => createSignaling(SIGNAL_URL), []);
+
+  function playMedia(element, label) {
+    if (!element || !element.paused) return;
+    element.play().catch((error) => {
+      console.error(`Failed to play ${label}.`, error);
+    });
+  }
 
   useEffect(() => {
     syncLocalVideo();
@@ -366,36 +397,57 @@ export default function App() {
     localVideoRef.current = node;
     if (!node || !localStreamRef.current) return;
     node.srcObject = localStreamRef.current;
-    node.play().catch(() => { });
+    playMedia(node, "local video");
   }, []);
 
   const attachRemoteVideo = useCallback((node) => {
     remoteVideoRef.current = node;
     if (!node) return;
-    node.srcObject = remoteStreamRef.current ?? null;
-    if (remoteStreamRef.current?.getVideoTracks().length) {
-      node.play().catch(() => { });
-    }
+    syncRemoteVideo();
+  }, []);
+
+  const attachRemoteAudio = useCallback((node) => {
+    remoteAudioRef.current = node;
+    if (!node) return;
+    node.autoplay = true;
+    node.defaultMuted = false;
+    node.muted = false;
+    node.volume = 1;
+    syncRemoteVideo();
   }, []);
 
   function syncLocalVideo() {
     const localVideo = localVideoRef.current;
     if (!localVideo || !localStreamRef.current) return;
-    localVideo.srcObject = localStreamRef.current;
-    localVideo.play().catch(() => { });
+    if (localVideo.srcObject !== localStreamRef.current) {
+      localVideo.srcObject = localStreamRef.current;
+    }
+    playMedia(localVideo, "local video");
   }
 
   function syncRemoteVideo() {
     const remoteVideo = remoteVideoRef.current;
+    const remoteAudio = remoteAudioRef.current;
     const remoteStream = remoteStreamRef.current;
     const hasRemoteVideo = Boolean(remoteStream?.getVideoTracks().length);
+    const hasRemoteAudio = Boolean(remoteStream?.getAudioTracks().length);
     if (!remoteVideo) {
       setRemoteReady(hasRemoteVideo);
-      return;
+    } else {
+      if (remoteVideo.srcObject !== remoteStream) {
+        remoteVideo.srcObject = remoteStream ?? null;
+      }
+      if (hasRemoteVideo) {
+        playMedia(remoteVideo, "remote video");
+      }
     }
-    remoteVideo.srcObject = remoteStream ?? null;
-    if (hasRemoteVideo) {
-      remoteVideo.play().catch(() => { });
+    if (remoteAudio) {
+      if (remoteAudio.srcObject !== remoteStream) {
+        remoteAudio.srcObject = remoteStream ?? null;
+      }
+      if (hasRemoteAudio) {
+        playMedia(remoteAudio, "remote audio");
+      }
     }
     setRemoteReady(hasRemoteVideo);
   }
@@ -415,6 +467,9 @@ export default function App() {
     remoteStreamRef.current = null;
     if (remoteVideoRef.current) {
       remoteVideoRef.current.srcObject = null;
+    }
+    if (remoteAudioRef.current) {
+      remoteAudioRef.current.srcObject = null;
     }
     setPeerConnected(false);
     setRemoteReady(false);
@@ -553,26 +608,28 @@ export default function App() {
     };
 
     connection.ontrack = (event) => {
-      if (!remoteStreamRef.current) {
-        remoteStreamRef.current = new MediaStream();
+      const incomingStream = event.streams?.[0];
+      if (incomingStream) {
+        remoteStreamRef.current = incomingStream;
+      } else {
+        if (!remoteStreamRef.current) {
+          remoteStreamRef.current = new MediaStream();
+        }
+        if (!remoteStreamRef.current.getTracks().some((track) => track.id === event.track.id)) {
+          remoteStreamRef.current.addTrack(event.track);
+        }
       }
-
-      if (!remoteStreamRef.current.getTracks().some((track) => track.id === event.track.id)) {
-        remoteStreamRef.current.addTrack(event.track);
-      }
-
       if (event.track.kind === "video") {
         setupReceiverTransform(event.receiver);
       }
-
       event.track.onended = () => {
-        remoteStreamRef.current?.removeTrack(event.track);
+        if (!incomingStream) {
+          remoteStreamRef.current?.removeTrack(event.track);
+        }
         syncRemoteVideo();
       };
-
       syncRemoteVideo();
     };
-
     connection.onconnectionstatechange = () => {
       const state = connection.connectionState;
       setStatus(`Peer state: ${state}`);
@@ -582,6 +639,9 @@ export default function App() {
         remoteStreamRef.current = null;
         if (remoteVideoRef.current) {
           remoteVideoRef.current.srcObject = null;
+        }
+        if (remoteAudioRef.current) {
+          remoteAudioRef.current.srcObject = null;
         }
         setPeerConnected(false);
     setRemoteReady(false);
@@ -639,6 +699,9 @@ export default function App() {
     remoteStreamRef.current = null;
     if (remoteVideoRef.current) {
       remoteVideoRef.current.srcObject = null;
+    }
+    if (remoteAudioRef.current) {
+      remoteAudioRef.current.srcObject = null;
     }
     setPeerConnected(false);
     setRemoteReady(false);
@@ -874,7 +937,7 @@ export default function App() {
               <div className="call-card">
                 <div className="call-card-header">
                   <h3>You</h3>
-                
+                  <span>Local - muted</span>
                 </div>
                 <video
                   ref={attachLocalVideo}
@@ -897,6 +960,12 @@ export default function App() {
                   autoPlay
                   playsInline
                   className="video-frame hero-video"
+                />
+                <audio
+                  ref={attachRemoteAudio}
+                  autoPlay
+                  playsInline
+                  hidden
                 />
                 {!peerConnected ? (
                   <div className="waiting-overlay">Waiting for remote peer to join</div>
@@ -1019,6 +1088,8 @@ export default function App() {
     </div>
   );
 }
+
+
 
 
 
