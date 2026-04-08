@@ -899,7 +899,7 @@ export default function App() {
                   autoPlay
                   muted
                   playsInline
-                  className="video-frame hero-video"
+                  className="video-frame hero-video local-preview"
                 />
               </div>
             </div>
@@ -944,7 +944,7 @@ export default function App() {
                   autoPlay
                   muted
                   playsInline
-                  className="video-frame hero-video"
+                  className="video-frame hero-video local-preview"
                 />
               </div>
 
@@ -959,7 +959,7 @@ export default function App() {
                   ref={attachRemoteVideo}
                   autoPlay
                   playsInline
-                  className="video-frame hero-video"
+                  className="video-frame hero-video local-preview"
                 />
                 <audio
                   ref={attachRemoteAudio}
