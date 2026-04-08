@@ -437,6 +437,7 @@ button:active {
 }
 
 .hero-video { min-height: 200px; }
+.local-preview { transform: scaleX(-1); }
 
 /* ─── Call grid ──────────────────────────────────────────── */
 .call-grid { display: grid; gap: 14px; }
