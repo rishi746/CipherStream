@@ -73,82 +73,10 @@ package.json -> Root workspace scripts
 
 ---
 
-## Getting Started
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/your-username/cipherstream.git
-cd cipherstream
-```
-
-### 2. Install Dependencies
-
-```bash
-npm install
-```
-
-### 3. Configure Environment Variables
-
-Create a client env file if needed:
-
-```bash
-cp client/.env.example client/.env
-```
-
-Set the signaling server URL:
-
-```env
-VITE_SIGNAL_URL=http://localhost:3001
-```
-
-If no env var is set, the client falls back to:
-
-- `http://localhost:3001` during local development
-- the current site origin in production
-
-### 4. Start the Signaling Server
-
-```bash
-npm run dev:server
-```
-
-### 5. Start the Frontend
-
-```bash
-npm run dev:client
-```
-
-### 6. Open the App
-
-Visit:
-
-```bash
-http://localhost:5173
-```
-
-Open it in two tabs or on two devices, join the same room, and start the call.
-
----
-
-
-## Advanced Notes
-
-- Hidden transfers are embedded in encoded video frames, not sent through a visible chat channel.
-- The signaling server does not store media or hidden payloads; it only relays signaling messages.
-- The current prototype focuses on covert transfer through video, not a production-hardened conferencing stack.
-
-
----
-
-## Use Cases
-
-- Demonstrations of WebRTC encoded insertable streams
-- Experiments with encrypted hidden payload transfer
-- Teaching or learning about real-time media pipelines and packet embedding
-
----
 
 
 
-CipherStream is an experimental prototype built for research and learning purposes. It is not intended as a production-grade secure communications platform without additional hardening, testing, and review.
+
+
+
+
