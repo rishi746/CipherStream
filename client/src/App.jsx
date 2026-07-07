@@ -19,6 +19,11 @@ import {
   packetizeTransfer,
   unpackPacket,
 } from "./lib/steganography.js";
+import { Badge } from "./components/ui/badge.jsx";
+import { Button } from "./components/ui/button.jsx";
+import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card.jsx";
+import { Input, Textarea } from "./components/ui/input.jsx";
+import { Separator } from "./components/ui/separator.jsx";
 
 function resolveSignalUrl() {
   const configured = import.meta.env.VITE_SIGNAL_URL?.trim();
@@ -869,18 +874,24 @@ export default function App() {
             <h1>Cipher<br />Stream</h1>
           </div>
           <div className="landing-card">
-            <h3>Enter Session</h3>
-            <label>
-              Room ID
-              <input
-                value={roomCode}
-                onChange={(e) => setRoomCode(e.target.value)}
-                placeholder="e.g. room-alpha-7"
-                onKeyDown={(e) => e.key === "Enter" && startCamera()}
-              />
-            </label>
-            <button onClick={startCamera}>Start Camera &rarr;</button>
-            <p className="status-line">{status}</p>
+            <Card className="border-white/10 bg-[#0f172a]/80 p-6">
+              <CardHeader className="mb-4">
+                <CardTitle>Enter session</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <label className="text-[11px] uppercase tracking-[0.24em] text-slate-400">
+                  Room ID
+                  <Input
+                    value={roomCode}
+                    onChange={(e) => setRoomCode(e.target.value)}
+                    placeholder="e.g. room-alpha-7"
+                    onKeyDown={(e) => e.key === "Enter" && startCamera()}
+                  />
+                </label>
+                <Button className="w-full" onClick={startCamera}>Continue</Button>
+                <p className="status-line">{status}</p>
+              </CardContent>
+            </Card>
           </div>
         </section>
       ) : null}
@@ -891,7 +902,7 @@ export default function App() {
             <div className="lobby-preview-panel">
               <div className="lobby-preview-copy">
                 <p className="eyebrow">Camera preview</p>
-                <h2>Ready to join?</h2>
+                <h2>Camera</h2>
               </div>
               <div className="single-video-wrap lobby-video-wrap">
                 <video
@@ -905,15 +916,22 @@ export default function App() {
             </div>
 
             <aside className="lobby-side-panel">
-              <div className="lobby-side-copy">
-                <div className="room-pill">{roomCode}</div>
-                <h3>Join this secure room</h3>
-                <span className="status-line">{status}</span>
-              </div>
-              <div className="lobby-actions lobby-actions-stacked">
-                <button onClick={joinCall}>Join Call &gt;</button>
-                <button type="button" className="secondary-button" onClick={goHome}>Back to home</button>
-              </div>
+              <Card className="w-full p-5">
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-2">
+                    <div className="room-pill self-start">{roomCode}</div>
+                    <h3 className="text-lg font-semibold text-white">Room</h3>
+                  </div>
+                  <Separator />
+                  <div className="flex flex-col gap-2">
+                    <span className="status-line">{status}</span>
+                    <div className="flex flex-wrap gap-2">
+                      <Button onClick={joinCall}>Enter</Button>
+                      <Button variant="secondary" onClick={goHome}>Back</Button>
+                    </div>
+                  </div>
+                </div>
+              </Card>
             </aside>
           </div>
         </section>
@@ -925,19 +943,19 @@ export default function App() {
             <div className="stage-header">
               <div>
                 <p className="eyebrow">Live session</p>
-                <h2>Secure Call</h2>
+                <h2>Call</h2>
               </div>
               <div className="header-actions">
                 <div className="room-pill">{joinedRoom || roomCode}</div>
-                <button type="button" className="secondary-button" onClick={() => leaveCall("lobby")}>Leave call</button>
+                <Button variant="secondary" onClick={() => leaveCall("lobby")}>Leave call</Button>
               </div>
             </div>
 
             <div className="call-grid two-up">
-              <div className="call-card">
+              <Card className="call-card p-4">
                 <div className="call-card-header">
                   <h3>You</h3>
-                  
+                  <Badge variant="secondary">Local feed</Badge>
                 </div>
                 <video
                   ref={attachLocalVideo}
@@ -946,14 +964,14 @@ export default function App() {
                   playsInline
                   className="video-frame hero-video local-preview"
                 />
-              </div>
+              </Card>
 
-              <div className="call-card remote-card">
+              <Card className="call-card remote-card p-4">
                 <div className="call-card-header">
                   <h3>Remote peer</h3>
-                  <span className={peerConnected ? "connected-badge" : ""}>
+                  <Badge variant={peerConnected ? "success" : "secondary"}>
                     {peerConnected ? "Connected" : "Waiting..."}
-                  </span>
+                  </Badge>
                 </div>
                 <video
                   ref={attachRemoteVideo}
@@ -970,7 +988,7 @@ export default function App() {
                 {!peerConnected ? (
                   <div className="waiting-overlay">Waiting for remote peer to join</div>
                 ) : null}
-              </div>
+              </Card>
             </div>
           </section>
 
@@ -981,14 +999,14 @@ export default function App() {
                   <div className="panel-header">
                     <h2>Hidden message</h2>
                   </div>
-                  <textarea
+                  <Textarea
                     rows="5"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     disabled={!transfersEnabled}
                     placeholder="Type a covert message..."
                   />
-                  <button onClick={sendMessage} disabled={!transfersEnabled}>Embed &amp; send</button>
+                  <Button onClick={sendMessage} disabled={!transfersEnabled}>Embed &amp; send</Button>
                 </section>
 
                 <section className="panel panel-fixed panel-hidden-file">

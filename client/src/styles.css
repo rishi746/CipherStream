@@ -1,5 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* ─── Design Tokens ──────────────────────────────────────── */
 :root {
   /* Core palette — deep navy intelligence terminal */
@@ -75,6 +79,12 @@ body {
   gap: 16px;
 }
 
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 /* ─── Surface base ───────────────────────────────────────── */
 .landing-stage,
 .stage-panel,
@@ -88,20 +98,22 @@ body {
 /* ─── Landing ────────────────────────────────────────────── */
 .landing-stage {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
   min-height: 76vh;
   overflow: hidden;
   padding: 0;
+  align-items: stretch;
 }
 
 .landing-copy {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 32px;
-  padding: 64px 56px;
+  gap: 20px;
+  padding: 56px 48px;
   border-right: 1px solid var(--border);
   position: relative;
+  min-height: 100%;
 }
 
 /* Decorative corner mark */
@@ -173,9 +185,9 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 24px;
-  padding: 48px 36px;
-  background: var(--bg-card);
+  gap: 16px;
+  padding: 40px 36px;
+  background: linear-gradient(180deg, rgba(28, 35, 51, 0.96), rgba(13, 17, 23, 0.96));
   position: relative;
 }
 
@@ -252,6 +264,11 @@ button {
   position: relative;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 button:hover {
   opacity: 0.88;
   transform: translateY(-1px);
@@ -292,6 +309,12 @@ button:active {
 
 /* ─── Stage panel ────────────────────────────────────────── */
 .stage-panel { padding: 28px 32px; }
+
+.call-card,
+.panel,
+.lobby-side-panel .card {
+  backdrop-filter: blur(18px);
+}
 
 .stage-header {
   display: flex;
@@ -352,7 +375,7 @@ button:active {
 .lobby-actions {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   margin-top: 20px;
   flex-wrap: wrap;
 }
@@ -363,9 +386,9 @@ button:active {
 
 .lobby-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.75fr);
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
   align-items: center;
-  gap: 28px;
+  gap: 24px;
 }
 
 .lobby-preview-panel {
@@ -388,11 +411,11 @@ button:active {
 .lobby-side-panel {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
-  gap: 22px;
+  gap: 16px;
   min-height: 100%;
-  padding: 20px 8px;
+  padding: 8px 0;
 }
 
 .lobby-side-copy {
